@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Customer Feedback Intelligence — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#1E2761;
+    --navy-2:#262F73;
+    --ice:#CADCFC;
+    --accent:#3B5BDB;
+    --pos:#1E8E5A;
+    --neu:#E8A33D;
+    --neg:#C0392B;
+    --bg:#F4F6FC;
+    --card:#FFFFFF;
+    --line:#E3E7F3;
+    --text:#1B1B2F;
+    --muted:#5B6270;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,"Segoe UI",Arial,sans-serif;
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy) 0%, var(--navy-2) 100%);
+    color:#fff;
+    padding:2.4rem 2.6rem 2rem;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    top:-70px; right:-60px;
+    width:260px; height:260px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.07);
+  }
+  .eyebrow{
+    font-size:0.75rem;
+    letter-spacing:0.14em;
+    color:var(--ice);
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:2.1rem;
+    margin:0.4rem 0 0.3rem;
+  }
+  header p.tagline{
+    margin:0;
+    color:var(--ice);
+    font-size:1rem;
+    max-width:640px;
+  }
+  .kpis{
+    display:flex;
+    gap:1rem;
+    margin-top:1.6rem;
+    flex-wrap:wrap;
+    position:relative;
+    z-index:1;
+  }
+  .kpi{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:10px;
+    padding:0.9rem 1.3rem;
+    min-width:150px;
+  }
+  .kpi .num{font-size:1.7rem; font-weight:700; font-family:Georgia,serif;}
+  .kpi .label{font-size:0.78rem; color:var(--ice); margin-top:2px;}
+
+  nav.tabs{
+    display:flex;
+    gap:0.4rem;
+    padding:0 2.6rem;
+    background:var(--card);
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+  }
+  nav.tabs button{
+    border:none;
+    background:transparent;
+    padding:1rem 1.1rem;
+    font-size:0.92rem;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+  }
+  nav.tabs button:hover{color:var(--navy);}
+  nav.tabs button.active{
+    color:var(--navy);
+    border-bottom-color:var(--accent);
+  }
+
+  main{
+    padding:2rem 2.6rem 3rem;
+    max-width:1300px;
+    margin:0 auto;
+  }
+  .panel{display:none;}
+  .panel.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:1.2rem;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:1.4rem 1.5rem;
+    box-shadow:0 2px 10px rgba(30,39,97,0.05);
+  }
+  .card h3{
+    margin:0 0 0.3rem;
+    font-size:1.02rem;
+    color:var(--navy);
+    font-family:Georgia,serif;
+  }
+  .card .sub{
+    font-size:0.83rem;
+    color:var(--muted);
+    margin:0 0 1rem;
+  }
+  .col-4{grid-column:span 4;}
+  .col-5{grid-column:span 5;}
+  .col-6{grid-column:span 6;}
+  .col-7{grid-column:span 7;}
+  .col-8{grid-column:span 8;}
+  .col-12{grid-column:span 12;}
+  @media (max-width:900px){
+    .col-4,.col-5,.col-6,.col-7,.col-8{grid-column:span 12;}
+  }
+
+  canvas{max-height:320px;}
+
+  table{width:100%; border-collapse:collapse; font-size:0.88rem;}
+  th,td{text-align:left; padding:0.55rem 0.5rem; border-bottom:1px solid var(--line);}
+  th{color:var(--navy); font-size:0.78rem; text-transform:uppercase; letter-spacing:.03em;}
+  tr.best td{background:#EEF3FF; font-weight:600;}
+
+  .pill{
+    display:inline-block;
+    padding:0.15rem 0.55rem;
+    border-radius:20px;
+    font-size:0.72rem;
+    font-weight:700;
+    color:#fff;
+  }
+
+  .bar-row{display:flex; align-items:center; gap:0.8rem; margin-bottom:1rem;}
+  .bar-row .name{width:170px; font-size:0.85rem; font-weight:600; color:var(--navy); flex-shrink:0;}
+  .bar-track{flex:1; background:var(--line); border-radius:6px; height:20px; position:relative;}
+  .bar-fill{background:var(--accent); height:100%; border-radius:6px;}
+  .bar-val{width:50px; text-align:right; font-size:0.85rem; font-weight:700; color:var(--navy); flex-shrink:0;}
+  .bar-terms{width:280px; font-size:0.78rem; font-style:italic; color:var(--muted); flex-shrink:0;}
+
+  .insight{
+    display:flex;
+    gap:0.9rem;
+    padding:1rem 0;
+    border-bottom:1px solid var(--line);
+  }
+  .insight:last-child{border-bottom:none;}
+  .insight .num{
+    width:32px;height:32px;border-radius:50%;
+    background:var(--accent); color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700; flex-shrink:0; font-family:Georgia,serif;
+  }
+  .insight h4{margin:0 0 .25rem; font-size:0.95rem; color:var(--navy);}
+  .insight p{margin:0; font-size:0.85rem; color:var(--muted); line-height:1.5;}
+
+  .toggle-row{display:flex; gap:0.5rem; margin-bottom:1rem;}
+  .toggle-btn{
+    border:1px solid var(--line); background:var(--bg); color:var(--muted);
+    padding:0.35rem 0.9rem; border-radius:20px; font-size:0.8rem; cursor:pointer; font-weight:600;
+  }
+  .toggle-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+  footer{
+    text-align:center;
+    padding:1.5rem;
+    font-size:0.78rem;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Graduation Project · Project 1</div>
+  <h1>AI Customer Feedback Intelligence System</h1>
+  <p class="tagline">Sentiment classification and complaint clustering results for the Women's E-Commerce Clothing Reviews dataset.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="num">22,623</div><div class="label">Reviews analyzed</div></div>
+    <div class="kpi"><div class="num">82%</div><div class="label">Best model accuracy</div></div>
+    <div class="kpi"><div class="num">77%</div><div class="label">Positive sentiment</div></div>
+    <div class="kpi"><div class="num">5</div><div class="label">Complaint clusters found</div></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="sentiment">Sentiment Analysis</button>
+  <button class="tab-btn" data-tab="models">Model Comparison</button>
+  <button class="tab-btn" data-tab="clusters">Complaint Clusters</button>
+  <button class="tab-btn" data-tab="insights">Business Insights</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section class="panel active" id="overview">
+    <div class="grid">
+      <div class="card col-6">
+        <h3>Sentiment Distribution</h3>
+        <p class="sub">22,623 cleaned reviews, labeled from the 1–5 star rating</p>
+        <canvas id="chartOverviewSentiment"></canvas>
+      </div>
+      <div class="card col-6">
+        <h3>Review Rating Distribution</h3>
+        <p class="sub">Raw star ratings before sentiment mapping</p>
+        <canvas id="chartRatings"></canvas>
+      </div>
+      <div class="card col-12">
+        <h3>Project Pipeline</h3>
+        <p class="sub">From raw reviews to business insight</p>
+        <div class="grid" style="margin-top:0.5rem;">
+          <div class="col-4" style="font-size:0.85rem; color:var(--muted); border-left:3px solid var(--accent); padding-left:0.8rem;">
+            <strong style="color:var(--navy);">1. Data prep &amp; NLP</strong><br/>Clean text, remove stopwords, TF-IDF vectorize (5,000 features)
+          </div>
+          <div class="col-4" style="font-size:0.85rem; color:var(--muted); border-left:3px solid var(--accent); padding-left:0.8rem;">
+            <strong style="color:var(--navy);">2. Sentiment modeling</strong><br/>3 models trained &amp; compared: Logistic Regression, Random Forest, Naive Bayes
+          </div>
+          <div class="col-4" style="font-size:0.85rem; color:var(--muted); border-left:3px solid var(--accent); padding-left:0.8rem;">
+            <strong style="color:var(--navy);">3. Complaint clustering</strong><br/>K-Means on negative reviews surfaces 5 recurring complaint themes
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SENTIMENT -->
+  <section class="panel" id="sentiment">
+    <div class="grid">
+      <div class="card col-7">
+        <h3>Sentiment Breakdown</h3>
+        <p class="sub">Positive reviews dominate, but ~10.5% are Negative and worth monitoring closely</p>
+        <canvas id="chartSentimentBar"></canvas>
+      </div>
+      <div class="card col-5">
+        <h3>How Sentiment Was Labeled</h3>
+        <p class="sub">Derived from the 1–5 star Rating column</p>
+        <table>
+          <tr><th>Rating</th><th>Sentiment</th><th>Count</th></tr>
+          <tr><td>4 – 5 stars</td><td><span class="pill" style="background:var(--pos);">Positive</span></td><td>17,430</td></tr>
+          <tr><td>3 stars</td><td><span class="pill" style="background:var(--neu);">Neutral</span></td><td>2,823</td></tr>
+          <tr><td>1 – 2 stars</td><td><span class="pill" style="background:var(--neg);">Negative</span></td><td>2,370</td></tr>
+        </table>
+        <p class="sub" style="margin-top:1rem;">Most common words across all reviews cluster around fit, size, love, fabric, and color — typical of apparel feedback.</p>
+      </div>
+      <div class="card col-12">
+        <h3>Classification Difficulty by Class (F1-score, best model)</h3>
+        <p class="sub">Neutral (3-star) reviews mix praise and criticism, making them the hardest class to classify correctly</p>
+        <div style="margin-top:1rem;">
+          <div class="bar-row"><div class="name">Positive</div><div class="bar-track"><div class="bar-fill" style="width:91%; background:var(--pos);"></div></div><div class="bar-val">0.91</div></div>
+          <div class="bar-row"><div class="name">Negative</div><div class="bar-track"><div class="bar-fill" style="width:57%; background:var(--neg);"></div></div><div class="bar-val">0.57</div></div>
+          <div class="bar-row"><div class="name">Neutral</div><div class="bar-track"><div class="bar-fill" style="width:41%; background:var(--neu);"></div></div><div class="bar-val">0.41</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODELS -->
+  <section class="panel" id="models">
+    <div class="grid">
+      <div class="card col-7">
+        <h3>Model Comparison</h3>
+        <p class="sub">Three classifiers trained on the same 80/20 stratified split</p>
+        <div class="toggle-row">
+          <button class="toggle-btn active" data-metric="accuracy">Accuracy</button>
+          <button class="toggle-btn" data-metric="f1">Weighted F1</button>
+          <button class="toggle-btn" data-metric="precision">Precision</button>
+        </div>
+        <canvas id="chartModels"></canvas>
+      </div>
+      <div class="card col-5">
+        <h3>Full Results Table</h3>
+        <p class="sub">Logistic Regression selected as best model</p>
+        <table>
+          <tr><th>Model</th><th>Acc.</th><th>Prec.</th><th>Rec.</th><th>F1</th></tr>
+          <tr class="best"><td>Logistic Regression</td><td>79.6%</td><td>0.837</td><td>0.796</td><td>0.812</td></tr>
+          <tr><td>Random Forest</td><td>81.1%</td><td>0.792</td><td>0.811</td><td>0.799</td></tr>
+          <tr><td>Naive Bayes</td><td>82.2%</td><td>0.786</td><td>0.822</td><td>0.787</td></tr>
+        </table>
+        <p class="sub" style="margin-top:1rem;">Naive Bayes has the highest raw accuracy, but Logistic Regression wins on weighted F1 — it balances the minority Negative/Neutral classes better instead of just favoring the majority Positive class.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLUSTERS -->
+  <section class="panel" id="clusters">
+    <div class="grid">
+      <div class="card col-12">
+        <h3>Complaint Clusters (K-Means on 2,370 Negative Reviews)</h3>
+        <p class="sub">Five recurring complaint themes, ranked by number of reviews</p>
+        <div style="margin-top:1.2rem;">
+          <div class="bar-row"><div class="name">Fit &amp; Length (C1)</div><div class="bar-track"><div class="bar-fill" style="width:100%;"></div></div><div class="bar-val">736</div><div class="bar-terms">"top, fit, look, short, back"</div></div>
+          <div class="bar-row"><div class="name">Fabric Quality (C3)</div><div class="bar-track"><div class="bar-fill" style="width:92%;"></div></div><div class="bar-val">676</div><div class="bar-terms">"quality, cheap, thin, poor"</div></div>
+          <div class="bar-row"><div class="name">Dress Material (C2)</div><div class="bar-track"><div class="bar-fill" style="width:58%;"></div></div><div class="bar-val">430</div><div class="bar-terms">"dress, fabric, material"</div></div>
+          <div class="bar-row"><div class="name">Sizing (C4)</div><div class="bar-track"><div class="bar-fill" style="width:46%;"></div></div><div class="bar-val">336</div><div class="bar-terms">"small, size, runs, big, large"</div></div>
+          <div class="bar-row"><div class="name">Boxy Fit (C0)</div><div class="bar-track"><div class="bar-fill" style="width:26%;"></div></div><div class="bar-val">192</div><div class="bar-terms">"shirt, boxy, back, fabric"</div></div>
+        </div>
+      </div>
+      <div class="card col-12" style="background:var(--navy); border:none;">
+        <h3 style="color:#fff;">Takeaway</h3>
+        <p style="color:var(--ice); font-size:0.92rem; margin:0;">Sizing &amp; fit issues (clusters 0, 1, 4 — 1,264 reviews) drive the majority of complaints, followed by fabric-quality concerns (clusters 2, 3 — 1,106 reviews).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section class="panel" id="insights">
+    <div class="grid">
+      <div class="card col-12">
+        <h3>Business Recommendations</h3>
+        <p class="sub">Turning model output into decisions the business can act on</p>
+        <div class="insight">
+          <div class="num">1</div>
+          <div><h4>Fix sizing guidance</h4><p>Sizing/fit spans 3 of 5 complaint clusters (1,264 of 2,370 negative reviews) — improving size charts directly targets the #1 complaint driver.</p></div>
+        </div>
+        <div class="insight">
+          <div class="num">2</div>
+          <div><h4>Audit fabric suppliers</h4><p>"Cheap", "thin", "poor material" complaints cluster around specific departments, pointing to a sourcing issue rather than a company-wide one.</p></div>
+        </div>
+        <div class="insight">
+          <div class="num">3</div>
+          <div><h4>Prioritize fixes by department</h4><p>Linking each cluster back to Department Name lets merchandising teams focus resources where complaint volume is highest.</p></div>
+        </div>
+        <div class="insight">
+          <div class="num">4</div>
+          <div><h4>Route Neutral reviews for human review</h4><p>Neutral (3-star) reviews are the hardest to classify automatically (F1 = 0.41) — flag them for manual triage or a stronger model in production.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>AI Customer Feedback Intelligence System — Dashboard generated from the project notebook's saved results.</footer>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  const navy='#1E2761', accent='#3B5BDB', pos='#1E8E5A', neu='#E8A33D', neg='#C0392B';
+
+  Chart.defaults.font.family = "-apple-system, Segoe UI, Arial, sans-serif";
+  Chart.defaults.color = '#5B6270';
+
+  // Overview: sentiment donut
+  new Chart(document.getElementById('chartOverviewSentiment'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Positive','Neutral','Negative'],
+      datasets: [{ data: [17430,2823,2370], backgroundColor: [pos,neu,neg], borderWidth: 2, borderColor:'#fff' }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom' } },
+      cutout: '62%'
+    }
+  });
+
+  // Overview: rating distribution
+  new Chart(document.getElementById('chartRatings'), {
+    type: 'bar',
+    data: {
+      labels: ['1 star','2 stars','3 stars','4 stars','5 stars'],
+      datasets: [{ label:'Reviews', data: [842,1449,2823,4908,12601], backgroundColor: accent, borderRadius:5 }]
+    },
+    options: {
+      plugins:{ legend:{display:false} },
+      scales:{ y:{ grid:{color:'#E3E7F3'} }, x:{ grid:{display:false} } }
+    }
+  });
+
+  // Sentiment tab bar
+  new Chart(document.getElementById('chartSentimentBar'), {
+    type: 'bar',
+    data: {
+      labels: ['Positive','Neutral','Negative'],
+      datasets: [{ label:'Reviews', data:[17430,2823,2370], backgroundColor:[pos,neu,neg], borderRadius:6 }]
+    },
+    options: {
+      indexAxis:'y',
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ grid:{color:'#E3E7F3'} }, y:{ grid:{display:false} } }
+    }
+  });
+
+  // Models chart with toggle
+  const modelData = {
+    accuracy:  [0.7956, 0.8111, 0.8217],
+    f1:        [0.8121, 0.7993, 0.7874],
+    precision: [0.8366, 0.7916, 0.7861],
+  };
+  const modelLabels = ['Logistic Regression','Random Forest','Naive Bayes'];
+  const modelsChart = new Chart(document.getElementById('chartModels'), {
+    type: 'bar',
+    data: {
+      labels: modelLabels,
+      datasets: [{ label:'Accuracy', data: modelData.accuracy, backgroundColor: [navy, accent, '#8CA3F2'], borderRadius:6 }]
+    },
+    options: {
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: (ctx)=> (ctx.parsed.y*100).toFixed(1)+'%' } } },
+      scales:{ y:{ min:0, max:1, ticks:{ callback:(v)=> (v*100)+'%' }, grid:{color:'#E3E7F3'} }, x:{ grid:{display:false} } }
+    }
+  });
+
+  document.querySelectorAll('.toggle-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const metric = btn.dataset.metric;
+      const label = metric === 'accuracy' ? 'Accuracy' : metric === 'f1' ? 'Weighted F1' : 'Precision';
+      modelsChart.data.datasets[0].data = modelData[metric];
+      modelsChart.data.datasets[0].label = label;
+      modelsChart.update();
+    });
+  });
+</script>
+
+</body>
+</html>
