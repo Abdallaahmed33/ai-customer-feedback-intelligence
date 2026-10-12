@@ -1,3 +1,5 @@
+> **Latest version:** this was my ITI graduation project (notebook + trained models + static dashboard). I rebuilt it as a live product here: **[ReviewPulse](https://github.com/Abdallaahmed33/reviewpulse)** — FastAPI, JWT, live Streamlit dashboard, complaint clustering, and CI.
+
 # AI Customer Feedback Intelligence System
 
 An end-to-end AI system that analyzes customer reviews, classifies sentiment, and detects recurring complaint categories using NLP and Machine Learning.
@@ -24,7 +26,7 @@ An end-to-end AI system that analyzes customer reviews, classifies sentiment, an
 1. Go to [colab.research.google.com](https://colab.research.google.com)
 2. Open the notebook: **File → Upload notebook** → select `AI_Customer_Feedback_Intelligence_System.ipynb`
 3. Upload the dataset: click the **Files** icon on the left sidebar → **Upload** → select `Womens Clothing E-Commerce Reviews.csv`
-   - Make sure it's uploaded into the root session folder (`/content/`), matching the path used in the notebook's `pd.read_csv(...)` cell.
+ - Make sure it's uploaded into the root session folder (`/content/`), matching the path used in the notebook's `pd.read_csv(...)` cell.
 4. Add this line in a new cell **at the very top** of the notebook (Colab doesn't have `wordcloud` pre-installed):
    ```python
    !pip install wordcloud -q
@@ -56,7 +58,6 @@ python predict.py "This dress is gorgeous and fits perfectly!"
 ```
 Run it with no arguments to see it classify 4 built-in example reviews instead.
 
-
 Both `predict.py` and `app.py` need `sentiment_model.pkl` and `tfidf_vectorizer.pkl` in the same folder — copy them alongside these scripts before running.
 
 ---
@@ -80,4 +81,3 @@ Both `predict.py` and `app.py` need `sentiment_model.pkl` and `tfidf_vectorizer.
 - **K-Means**: 5 complaint categories (sizing, fabric quality, fit/shape, etc.)
 
 Good luck with your submission!
-
